@@ -1,0 +1,12 @@
+{
+  "name": "ecampus-ufam-crawler",
+  "author": "Micael Levi L. C. <mllc@icomp.ufam.edu.br> (micalevisk.github.io)",
+  "scripts": {
+    "start": "node notas-ecampus.js"
+  },
+  "dependencies": {
+    "cli-table": "^0.3.4",
+    "dotenv": "^8.2.0",
+    "puppeteer": "^5.5.0"
+  }
+}

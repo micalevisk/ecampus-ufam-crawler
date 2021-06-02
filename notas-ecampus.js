@@ -1,10 +1,10 @@
-require('dotenv/config');
-
 const puppeteer = require('puppeteer');
 const readline = require('readline');
 const Table = require('cli-table');
 
 const { log, error } = console;
+
+const IS_DEBUG_MODE = process.env.DEBUG === 'true';
 
 /**
  * Esperar um input do usuário via stdin.
@@ -54,7 +54,7 @@ async function clickAndWaitNavi(page, selector, waitOptions) {
  * @returns {Promise<{browser: puppeteer.Browser; page: puppeteer.Page}>}
  */
 async function initPuppeteer(browserOpts) {
-  const headless = process.env.DEBUG !== 'true';
+  const headless = !IS_DEBUG_MODE;
   const defaultLaunchOptions = { headless, args: ['--no-sandbox'] };
   const browser = await puppeteer.launch({ ...defaultLaunchOptions, ...browserOpts });
   const page = await browser.newPage();
@@ -177,10 +177,12 @@ async function performEcampusCrawler({ login, password }) {
   }
 }
 
-/** */
-async function runCrawler() {
-  const    login = process.env.ECAMPUS_LOGIN    || await askQuestionToUser('> Seu CPF: ');
-  const password = process.env.ECAMPUS_PASSWORD || await askQuestionToUser('> Sua senha: ', true);
+/**
+ * @param {{login?:string, password?:string}} [credentials]
+ */
+async function runCrawler(credentials = {}) {
+  const login = credentials.login || await askQuestionToUser('> Seu CPF: ');
+  const password = credentials.password || await askQuestionToUser('> Sua senha: ', true);
 
   try {
     const tabelaSerializada = await performEcampusCrawler({login, password});
@@ -209,3 +211,4 @@ async function runCrawler() {
 }
 
 module.exports = runCrawler;
+

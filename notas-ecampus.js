@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer');
 const readline = require('readline');
 const Table = require('cli-table');
 
+const { log, error } = console;
 
 /**
  * Esperar um input do usuário via stdin.
@@ -48,6 +49,10 @@ async function clickAndWaitNavi(page, selector, waitOptions) {
   ]).then(value => value[0]);
 }
 
+/**
+ * @param {puppeteer.BrowserOptions} browserOpts
+ * @returns {Promise<{browser: puppeteer.Browser; page: puppeteer.Page}>}
+ */
 async function initPuppeteer(browserOpts) {
   const headless = process.env.DEBUG !== 'true';
   const defaultLaunchOptions = { headless, args: ['--no-sandbox'] };
@@ -56,20 +61,8 @@ async function initPuppeteer(browserOpts) {
   return { browser, page };
 }
 
-// (c) https://github.com/GoogleChrome/puppeteer/issues/2423
-async function takeScreenshotOnElement({ page, width = 2000, height = 800, selector }) {
-  const genImageName = () => `${(new Date().toTimeString()).split(' ')[0].replace(/\D/g, '_')}.png`;
-
-  await page.setViewport({ width, height, deviceScaleFactor: 2 });
-  const elHandle = await page.$(selector);
-  const filename = genImageName();
-  await elHandle.screenshot({ path: filename  });
-
-  return filename;
-}
-
-const  nodeToString = nodeElement => window['recuperarConteudo'](nodeElement);
-const nodesToString = nodes => nodes.map(nodeElement => window['recuperarConteudo'](nodeElement)); // não aceita usar um CB
+const nodeToString = nodeElement => window['recuperarConteudo'](nodeElement);
+const nodesToString = nodes => nodes.map(nodeElement => window['recuperarConteudo'](nodeElement));
 
 //#region [helpers] especializados para o crawler do Ecampus UFAM
 
@@ -86,23 +79,23 @@ const initPageFeatures = function () {
 async function loginIndex(page, { login, password }) {
   await page.evaluateOnNewDocument(initPageFeatures);
   await page.goto('https://ecampus.ufam.edu.br/ecampus/home/login');
-  console.error('>> Redirecionado');
+  error('>> Redirecionado');
 
   // Inserir o Login
   await page.click('input[type="text"]');
   await page.keyboard.press('Home');
   await page.keyboard.type(login);
-  console.error('>> CPF inserido');
+  error('>> CPF inserido');
 
   // Inserir a Senha
   await page.click('input[type="password"]');
   await page.keyboard.press('Home')
   await page.keyboard.type(password);
-  console.error('>> Senha inserida');
+  error('>> Senha inserida');
 
   // Logar
   await clickAndWaitNavi(page, 'input[type="submit"]', {waitUntil: 'networkidle0'});
-  console.error(`>> Logado com sucesso`);
+  error(`>> Logado com sucesso`);
 
   // Recuperar informação de sessão
   const session = await page.$eval('#user-information', nodeToString);
@@ -112,7 +105,7 @@ async function loginIndex(page, { login, password }) {
 
 async function selectModule(page, moduleName) {
   await clickAndWaitNavi(page, `a[alt="${moduleName}"]`, {waitUntil: 'networkidle0'});
-  console.error(`>> Módulo '${moduleName}' acessado com sucesso`);
+  error(`>> Módulo '${moduleName}' acessado com sucesso`);
 }
 
 const panelSelectors = {
@@ -123,7 +116,7 @@ const panelSelectors = {
 
 async function selectPanel(page, panelName) {
   await clickAndWaitNavi(page, panelSelectors[panelName], {waitUntil: 'networkidle2'});
-  console.error(`>> '${panelName}' acessado com sucesso`)
+  error(`>> '${panelName}' acessado com sucesso`)
 }
 
 const menuSelectors = {
@@ -146,7 +139,7 @@ async function performEcampusCrawler({ login, password }) {
   try {
 
     const session = await loginIndex(page, {login, password});
-    console.log(session);
+    log(session);
 
     await selectModule(page, 'Aluno');
 
@@ -157,16 +150,7 @@ async function performEcampusCrawler({ login, password }) {
     // await page.select('select#periodo', '202'); // selecionar o período
     const ano = await page.$eval('#ano', e => e.value);
     const periodo = await page.$eval('#periodo', seletor => seletor.selectedOptions[0].text);
-    console.log(`Período Selecionado: ${ano}/${periodo}`);
-
-    /*
-    // await page.click('#buscar') //.waitForSelector('.grid-notas');
-    // await page.$eval('#buscar', btn => btn.click());
-    await Promise.all([
-      page.click('#buscar'),
-      page.waitForSelector('.tabelas.grid-notas'),
-    ]);
-    */
+    log(`Período Selecionado: ${ano}/${periodo}`);
 
     const elNotas = await page.$('table.tabelas.grid-notas');
 
@@ -175,7 +159,7 @@ async function performEcampusCrawler({ login, password }) {
     const validColumns = [0,2,4,6,8,10,  21,22,23,24,25,26]; // apenas colunas interessantes para a tabela final
     const filterByValidColumns = arr => arr.filter((_, i) => validColumns.includes(i));
 
-    //#region [main] serializando o <TABLE>
+    //#region [main] serializando o elemento <TABLE>
     const [tableHead, ...tableBody] = await elNotas.$$('tr');
     const tableHeadValues = await tableHead.$$eval('th', nodesToString);
     const serializedTable = [ filterByValidColumns(tableHeadValues) ];
@@ -193,13 +177,10 @@ async function performEcampusCrawler({ login, password }) {
   }
 }
 
-
-
-(async function __main__() {
-
+/** */
+async function runCrawler() {
   const    login = process.env.ECAMPUS_LOGIN    || await askQuestionToUser('> Seu CPF: ');
   const password = process.env.ECAMPUS_PASSWORD || await askQuestionToUser('> Sua senha: ', true);
-  // const    opcao = process.argv[2];
 
   try {
     const tabelaSerializada = await performEcampusCrawler({login, password});
@@ -210,14 +191,14 @@ async function performEcampusCrawler({ login, password }) {
         head: ['bgMagenta'],
         border: ['red'],
       },
-      colAligns: Array(tabelaSerializada[0].length).fill('center')
+      colAligns: Array(tabelaSerializada[0].length).fill('center'),
     });
 
     prettyTable.push( ...tabelaSerializada.slice(1) );
 
-    console.log( prettyTable.toString() );
+    log( prettyTable.toString() );
   } catch (err) {
-    console.error(`
+    error(`
     --------------------
     ${err.message}
     --------------------
@@ -225,5 +206,6 @@ async function performEcampusCrawler({ login, password }) {
 
     process.exit(1);
   }
+}
 
-}());
+module.exports = runCrawler;

@@ -1,12 +1,25 @@
 {
-  "name": "ecampus-ufam-crawler",
-  "author": "Micael Levi L. C. <mllc@icomp.ufam.edu.br> (micalevisk.github.io)",
-  "scripts": {
-    "start": "node notas-ecampus.js"
-  },
+  "name": "@micalevisk/ecampus-ufam-crawler",
+  "version": "0.0.1",
+  "description": "An CLI tool that automates common tasks for https://ecampus.ufam.edu.br",
+  "main": "index.js",
   "dependencies": {
-    "cli-table": "^0.3.4",
-    "dotenv": "^8.2.0",
-    "puppeteer": "^5.5.0"
-  }
+    "cli-table": "^0.3.6",
+    "dotenv": "^10.0.0",
+    "puppeteer": "^10.0.0"
+  },
+  "scripts": {
+    "start": "node ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/micalevisk/ecampus-ufam-crawler.git"
+  },
+  "keywords": [],
+  "author": "Micael Levi L. C. (https://micalevisk.github.io)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/micalevisk/ecampus-ufam-crawler/issues"
+  },
+  "homepage": "https://github.com/micalevisk/ecampus-ufam-crawler#readme"
 }

@@ -57,7 +57,7 @@ async function initPuppeteer(browserOpts) {
   const headless = !IS_DEBUG_MODE;
   const defaultLaunchOptions = { headless, args: ['--no-sandbox'] };
   const browser = await puppeteer.launch({ ...defaultLaunchOptions, ...browserOpts });
-  const page = await browser.newPage();
+  const page = (await browser.pages())[0];
   return { browser, page };
 }
 

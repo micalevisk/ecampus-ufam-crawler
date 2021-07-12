@@ -8,7 +8,9 @@
   "dependencies": {
     "cli-table": "^0.3.6",
     "dotenv": "^10.0.0",
-    "puppeteer": "^10.0.0"
+    "prompts": "^2.4.1",
+    "puppeteer": "^10.0.0",
+    "superstruct": "^0.15.2"
   },
   "scripts": {},
   "repository": {

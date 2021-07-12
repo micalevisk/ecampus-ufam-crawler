@@ -2,37 +2,11 @@ const puppeteer = require('puppeteer');
 const readline = require('readline');
 const Table = require('cli-table');
 
+const prompts = require('./prompts');
+
 const { log, error } = console;
 
 const IS_DEBUG_MODE = process.env.DEBUG === 'true';
-
-/**
- * Esperar um input do usuário via stdin.
- * @param {string} query Messagem de prompt.
- * @param {boolean} [hide=false] Esconder a entrada do usuário.
- * @returns {Promise<string>} A entrada do usuário.
- */
-function askQuestionToUser(query, hide = false) {
-  const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-  });
-
-  rl._writeToOutput = stringToWrite =>
-    rl.output.write(
-        hide
-      ? '\x1B[2K\x1B[200D' + query + '[' + ( (rl.line.length % 2) ? '=-' : '-=' ) + ']'
-      : stringToWrite
-    );
-
-  return new Promise(resolve =>
-    rl.question(query, ans => {
-      rl.close();
-      resolve(ans);
-    })
-  );
-}
-
 
 /**
  * Dedicated method to page to click and wait for navigation.
@@ -78,7 +52,10 @@ const initPageFeatures = function () {
 
 async function loginIndex(page, { login, password }) {
   await page.evaluateOnNewDocument(initPageFeatures);
-  await page.goto('https://ecampus.ufam.edu.br/ecampus/home/login');
+  await page.goto('https://ecampus.ufam.edu.br/ecampus', {
+    waitUntil: 'domcontentloaded',
+    timeout: 1000 * 10,
+  });
   error('>> Redirecionado');
 
   // Inserir o Login
@@ -147,9 +124,25 @@ async function performEcampusCrawler({ login, password }) {
 
     await selectPanel(page, 'Notas e Frequência');
 
-    // await page.select('select#periodo', '202'); // selecionar o período
+    const pageItems = await page.$$eval('select#periodo > option', options =>
+        options.map(option => ({
+          text: (option.textContent || '').trim(),
+          key: option.value,
+        }))
+    );
+    const choice = await prompts.selector({
+      message: 'Selecione o período que deseja ver',
+      questions: pageItems,
+    }) || pageItems[0].key;
+    await page.select('select#periodo', choice); // selecionar o período
+
     const ano = await page.$eval('#ano', e => e.value);
     const periodo = await page.$eval('#periodo', seletor => seletor.selectedOptions[0].text);
+
+    await Promise.all([
+      page.click('#buscar'),
+      page.waitForResponse('https://ecampus.ufam.edu.br/ecampus/notasEFrequencia/getNotas'),
+    ]);
     log(`Período Selecionado: ${ano}/${periodo}`);
 
     const elNotas = await page.$('table.tabelas.grid-notas');
@@ -181,8 +174,10 @@ async function performEcampusCrawler({ login, password }) {
  * @param {{login?:string, password?:string}} [credentials]
  */
 async function runCrawler(credentials = {}) {
-  const login = credentials.login || await askQuestionToUser('> Seu CPF: ');
-  const password = credentials.password || await askQuestionToUser('> Sua senha: ', true);
+  const login = credentials.login ||
+    await prompts.input({ message: 'Seu CPF', mandatory: true });
+  const password = credentials.password ||
+    await prompts.input({ message: 'Sua senha', mandatory: true, hide: true });
 
   try {
     const tabelaSerializada = await performEcampusCrawler({login, password});

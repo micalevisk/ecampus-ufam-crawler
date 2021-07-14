@@ -1,3 +1,4 @@
+const { promisify } = require('util');
 const puppeteer = require('puppeteer');
 const readline = require('readline');
 const Table = require('cli-table');
@@ -7,6 +8,26 @@ const prompts = require('./prompts');
 const { log, error } = console;
 
 const IS_DEBUG_MODE = process.env.DEBUG === 'true';
+
+/** */
+const wait = promisify(setTimeout);
+
+/**
+ * @param {() => Promise<any>} fn
+ * @param {number} retryDelay Milliseconds to wait before retry
+ * @param {number} numRetries
+ */
+const retry = async(fn, retryDelay, numRetries) => {
+  for (let attempt = 1; attempt <= numRetries; ++attempt) {
+    try {
+      return await fn.call(null);
+    } catch (e) {
+      if (attempt === numRetries) throw e; // Didn't succeeded
+      await wait(retryDelay);
+      retryDelay = retryDelay * 2;
+    }
+  }
+}
 
 /**
  * Dedicated method to page to click and wait for navigation.
@@ -52,10 +73,14 @@ const initPageFeatures = function () {
 
 async function loginIndex(page, { login, password }) {
   await page.evaluateOnNewDocument(initPageFeatures);
-  await page.goto('https://ecampus.ufam.edu.br/ecampus', {
-    waitUntil: 'domcontentloaded',
-    timeout: 1000 * 10,
-  });
+  await retry(
+    () => page.goto('https://ecampus.ufam.edu.br/ecampus', {
+      waitUntil: 'domcontentloaded',
+      timeout: 1000 * 15,
+    }),
+    1000 * 5,
+    3, // To spent at least 60s in trying to reach the target page
+  );
   error('>> Redirecionado');
 
   // Inserir o Login

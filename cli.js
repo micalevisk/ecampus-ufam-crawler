@@ -8,9 +8,8 @@ if (require.main === module) {
     password: process.env.ECAMPUS_PASSWORD,
   };
   // Clear sensititve env. vars. to prevent bad usage from external dependencies.
-  delete process.env.ECAMPUS_LOGIN;
-  delete process.env.ECAMPUS_PASSWORD;
+  process.env.ECAMPUS_LOGIN=undefined;
+  process.env.ECAMPUS_PASSWORD=undefined;
 
   require('./notas-ecampus')(credentials);
 }
-

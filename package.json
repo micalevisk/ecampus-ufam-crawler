@@ -1,7 +1,7 @@
 {
   "name": "@micalevisk/ecampus-ufam-crawler",
   "version": "0.0.1",
-  "description": "A CLI tool that automates common tasks for https://ecampus.ufam.edu.br",
+  "description": "A CLI tool that automates common tasks on https://ecampus.ufam.edu.br",
   "bin": {
     "ecampus-ufam-crawler": "./cli.js"
   },
@@ -12,7 +12,9 @@
     "puppeteer": "^14.1.0",
     "superstruct": "^0.15.4"
   },
-  "scripts": {},
+  "scripts": {
+    "start": "node cli"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/micalevisk/ecampus-ufam-crawler.git"

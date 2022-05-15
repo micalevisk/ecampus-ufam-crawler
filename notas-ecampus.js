@@ -123,9 +123,10 @@ async function selectPanel(page, panelName) {
 
 const menuSelectors = {
   'Home' :                  '#accordion > [role="tab"]:nth-child(1)',
-  'Serviços':               '#accordion > [role="tab"]:nth-child(3)',
-  'Declarações':            '#accordion > [role="tab"]:nth-child(5)',
-  'Consultas e Relatórios': '#accordion > [role="tab"]:nth-child(7)'
+  'Monitoria UFAM':         '#accordion > [role="tab"]:nth-child(3)',
+  'Serviços':               '#accordion > [role="tab"]:nth-child(5)',
+  'Declarações':            '#accordion > [role="tab"]:nth-child(7)',
+  'Consultas e Relatórios': '#accordion > [role="tab"]:nth-child(9)',
 };
 
 async function selectMenu(page, menuName) {

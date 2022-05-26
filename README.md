@@ -6,6 +6,9 @@
 # optional
 cp .env.example .env
 
+# If you want to see what's going on behind the scenes
+export DEBUG=true
+
 npm install
 npm link
 ecampus-ufam-crawler

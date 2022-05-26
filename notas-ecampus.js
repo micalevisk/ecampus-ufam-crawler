@@ -5,9 +5,9 @@ const Table = require('cli-table');
 
 const prompts = require('./prompts');
 
-const { log, error } = console;
-
 const IS_DEBUG_MODE = process.env.DEBUG === 'true';
+
+const { log, error } = console;
 
 /** */
 const wait = promisify(setTimeout);
@@ -143,6 +143,13 @@ async function performEcampusCrawler({ login, password }) {
 
     const session = await loginIndex(page, {login, password});
     log(session);
+
+    const resourceTypesToIgnore = ['image', 'stylesheet'];
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      if (resourceTypesToIgnore.includes(req.resourceType())) req.abort();
+      else req.continue();
+    });
 
     await selectModule(page, 'Aluno');
 
